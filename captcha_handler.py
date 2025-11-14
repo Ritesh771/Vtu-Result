@@ -12,7 +12,8 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-pytesseract.pytesseract.tesseract_cmd = resource_path(r"Tesseract-OCR\tesseract.exe")
+os.environ['TESSDATA_PREFIX'] = resource_path('Tesseract-OCR/tessdata')
+pytesseract.pytesseract.tesseract_cmd = '/usr/local/bin/tesseract'
 
 
 class CaptchaHandler:
