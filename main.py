@@ -281,7 +281,7 @@ class ScraperFrame(TemplateWindow):
         
         else:
             message = 'Kindly correct the following error(s) before proceeding:\n\n'+'\n'.join(error_list)
-            answer = messagebox.showerror(title='ERROR', message=message)
+            self.after(0, lambda: messagebox.showerror(title='ERROR', message=message))
     
     def try_again(self):
         self.toggle_entries('normal')
@@ -317,7 +317,7 @@ class ScraperFrame(TemplateWindow):
         try:
             conn_support.connect(self.url_value, self.see_process)
         except:
-            messagebox.showerror(title='Connection Error', message='There was an unknown error.\n\nPlease try again after some time.')
+            self.after(0, lambda: messagebox.showerror(title='Connection Error', message='There was an unknown error.\n\nPlease try again after some time.'))
             self.frame.loading.grid_remove()
             self.try_again()
             return
@@ -420,11 +420,11 @@ class ScraperFrame(TemplateWindow):
                         self.to_abort = False
                         break
                     else:
-                        messagebox.showerror(title='Connection Error', message=f'Maximum number of retries reached ({self.retries_value}).\nData collected so far (if any) will be saved.\n\nPlease try again after some time.')
+                        self.after(0, lambda: messagebox.showerror(title='Connection Error', message=f'Maximum number of retries reached ({self.retries_value}).\nData collected so far (if any) will be saved.\n\nPlease try again after some time.'))
                         break
                         
             except:
-                messagebox.showerror(title='Unknown Error', message='There was an unknown error.\nData collected so far (if any) will be saved.\n\nPlease try again after some time.')
+                self.after(0, lambda: messagebox.showerror(title='Unknown Error', message='There was an unknown error.\nData collected so far (if any) will be saved.\n\nPlease try again after some time.'))
                 break
         
         conn_support.driver.quit()
@@ -435,21 +435,25 @@ class ScraperFrame(TemplateWindow):
             else:
                 self.status_update('No USNs were skipped.\n')
 
-            messagebox.showinfo(title='Select folder', message='Select a folder in which to save the downloaded files.')
-            fp_given = False
-            while not fp_given:
-                root_folder = fd.askdirectory(title='Select folder')
-                if root_folder:
-                    fp_given = True
-
-            dataproc = DataProcessor()
-            dataproc.preprocess(self.soup_dict, self.frame.form.is_reval.get(), self.main_sem, self.usn_begin, root_folder)
-
-            messagebox.showinfo(title='Success', message=f'Data collected and saved in a csv file.\n\nYou can continue to collect data of other students.\n\nOr you can close the scraper window to return to the main interface.')
+            self.after(0, lambda: self.save_data(self.soup_dict, self.frame.form.is_reval.get(), self.main_sem, self.usn_begin))
 
         else:
-            messagebox.showinfo(title='No Data', message='No data was collected.')
-        
+            self.after(0, lambda: messagebox.showinfo(title='No Data', message='No data was collected.'))
+            self.status_update('Start again or close this window.\n')
+            self.try_again()
+
+    def save_data(self, soup_dict, is_reval, main_sem, usn_begin):
+        messagebox.showinfo(title='Select folder', message='Select a folder in which to save the downloaded files.')
+        fp_given = False
+        while not fp_given:
+            root_folder = fd.askdirectory(title='Select folder')
+            if root_folder:
+                fp_given = True
+
+        dataproc = DataProcessor()
+        dataproc.preprocess(soup_dict, is_reval, main_sem, usn_begin, root_folder)
+
+        messagebox.showinfo(title='Success', message=f'Data collected and saved in a csv file.\n\nYou can continue to collect data of other students.\n\nOr you can close the scraper window to return to the main interface.')
         self.status_update('Start again or close this window.\n')
         self.try_again()
 
